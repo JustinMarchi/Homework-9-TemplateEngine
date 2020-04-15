@@ -8,28 +8,30 @@ const OUTPUT_DIR = path.resolve(__dirname, "output")
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 const render = require("./lib/htmlRenderer");
 
+const employeeList = [];
+
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
 const questions = [
     {
         type: "input",
         name: "name",
-        message: "What is your name?"
+        message: "Please enter employee name:"
     },
     {
         type: "input",
         name: "id",
-        message: "What is your ID Number?"
+        message: "Please enter employee ID number:"
     },
     {
         type: "input",
         name: "email",
-        message: "What is your e-mail address?"
+        message: "Please enter employee e-mail address:"
     },
     {
         type: "list",
         name: "role",
-        message: "What is your role in the team?",
+        message: "What is the employee's role in the team?",
         choices: [{
             name: "Manager"
         },
@@ -43,7 +45,7 @@ const questions = [
     {
         type: "input",
         name: "officeNumber",
-        message: "What is your office number?",
+        message: "Please enter manager's office number:",
         when: function(answers){
             return answers.role === "Manager";
         }
@@ -51,7 +53,7 @@ const questions = [
     {
         type: "input",
         name: "github",
-        message: "What is your GitHub username?",
+        message: "Please enter engineer's github username:",
         when: function(answers){
             return answers.role === "Engineer";
         }
@@ -67,10 +69,47 @@ const questions = [
 ];
 function promptUser() {
 
-   return inquirer.prompt(questions);
+   inquirer.prompt(questions).then(function(response) {
+       if (response.role === "Manager") {
+           const newManager = new Manager(response.name, response.id, response.email, response.officeNumber);
+           employeeList.push(newManager);
+       }
+       else if (response.role === "Engineer") {
+           const newEngineer = new Engineer(response.name, response.id, response.email, response.github);
+           employeeList.push(newEngineer);
+       }
+       else if (response.role === "Intern") {
+           const newIntern = new Intern(response.name, response.id, response.email, response.school);
+           employeeList.push(newIntern);
+       }
+       newEmployee();
+   });
 };
 
+function newEmployee() {
+    inquirer.prompt([
+        {
+            type:"confirm",
+            name:"newEmployee",
+            message:"Would you like to enter another employee?",
+            default:true
+        }
+    ]).then(function(answers) {
+        if (answers.newEmployee) {
+            promptUser();
+        }
+        else {
+            const html = render(employeeList);
+            fs.writeFile(outputPath, html, function(err) {
+                if (err) throw err;
+            })
+        }
+    })
+}
+
 promptUser();
+
+
 // After the user has input all employees desired, call the `render` function (required
 // above) and pass in an array containing all employee objects; the `render` function will
 // generate and return a block of HTML including templated divs for each employee!
